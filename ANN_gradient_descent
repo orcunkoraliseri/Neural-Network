@@ -1,0 +1,51 @@
+import tensorflow as tf
+import time
+
+
+# the data
+x = [[0.,0.],[1.,1.],[1.,0.],[0.,1.]]
+y_ = [[0.],[0.],[1.],[1.]]
+
+# induction
+# 1x2 input -> 2x3 hidden sigmoid -> 3x1 sigmoid output
+
+# Layer 0 => 1x2
+x0 = tf.constant(x, dtype=tf.float32)
+y0 = tf.constant(y_, dtype=tf.float32)
+
+
+# Layer 1 => 2x3
+m1 = tf.Variable(tf.random_uniform([2,3], minval=0.1, maxval=0.9, dtype=tf.float32))
+b1 = tf.Variable(tf.random_uniform([3], minval=0.1, maxval=0.9, dtype=tf.float32))
+h1= tf.sigmoid(tf.matmul(x0,m1) + b1)
+
+#Layer 2 => 3x1
+m2 = tf.Variable(tf.random_uniform([3,1], minval=0.1, maxval=0.9, dtype=tf.float32))
+b2 = tf.Variable(tf.random_uniform([1], minval=0.1, maxval=0.9, dtype=tf.float32))
+y_out = tf.sigmoid(tf.matmul(h1,m2) + b2)
+
+
+# loss function : sum of the squares of y0 - y_out
+loss = tf.reduce_sum(tf.square(y0 - y_out))
+
+# training : gradient descent (1.0) to minimize loss
+train = tf.train.GradientDescentOptimizer(1.0).minimize(loss)
+
+def run_classic():
+    with tf.Session() as ss:
+        ss.run(tf.global_variables_initializer())
+        for step in range(1000):
+            ss.run(train)
+
+        results = ss.run([m1,b1,m2,b2,y_out,loss])
+        labels = 'm1,b1,m2,b2,y_out,loss'.split(",")
+        for label,result in zip(*(labels,results)):
+            print('')
+            print(label)
+            print(result)
+
+
+if __name__ == '__main__':
+    t = time.time()
+    run_classic()
+    print('done in:', time.time() - t)
