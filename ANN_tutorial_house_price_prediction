@@ -1,0 +1,96 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+import itertools
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from pylab import rcParams
+import matplotlib
+import tensorflow as tf
+import warnings
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.ensemble import IsolationForest
+import pprint
+# tutorial link : https://www.kaggle.com/zoupet/neural-network-model-for-house-prices-tensorflow
+
+pp = pprint.PrettyPrinter()
+
+warnings.filterwarnings('ignore')
+
+tf.logging.set_verbosity(tf.logging.INFO)
+sess = tf.InteractiveSession()
+
+# train data
+train = pd.read_csv('D:/LEARNING/04.Tensorflow/train.csv')
+print('Shape of the train data with all features:', train.shape)
+train = train.select_dtypes(exclude=['object'])
+print("")
+print('Shape of the train data with numerical features:', train.shape)
+train.drop('Id',axis=1, inplace=True)
+train.fillna(0,inplace=True)
+
+# test data
+test = pd.read_csv('D:/LEARNING/04.Tensorflow/test.csv')
+test = test.select_dtypes(exclude=['object'])
+ID = test.Id
+test.fillna(0,inplace=True)
+test.drop('Id',axis = 1, inplace = True)
+
+print("")
+print("List of features contained our dataset:",list(train.columns))
+
+# isolate outliers
+clf = IsolationForest(max_samples = 100, random_state = 42)
+clf.fit(train)
+y_noano = clf.predict(train)
+y_noano = pd.DataFrame(y_noano, columns = ['Top'])
+y_noano[y_noano['Top'] == 1].index.values
+
+train = train.iloc[y_noano[y_noano['Top'] == 1].index.values]
+train.reset_index(drop=True, inplace=True)
+print("Number of Outliers:", y_noano[y_noano['Top'] == -1].shape[0])
+print("Number of rows without outliers:", train.shape[0])
+
+#a = train.head(5)
+
+col_train = list(train.columns)
+col_train_bis = list(train.columns)
+print(col_train)
+col_train_bis.remove('SalePrice')
+
+mat_train = np.matrix(train)
+mat_test = np.matrix(test)
+mat_new = np.matrix(train.drop('SalePrice', axis=1))
+mat_y = np.array(train.SalePrice).reshape((1314,1))
+
+prepro_y = MinMaxScaler() # normalisation of test set
+prepro_y.fit(mat_y)
+
+prepro = MinMaxScaler() # normalisation of all set
+prepro.fit(mat_train)
+
+prepro_test = MinMaxScaler() # normalisation of training set
+prepro_test.fit(mat_new)
+
+train = pd.DataFrame(prepro.transform(mat_train),columns=col_train)
+test = pd.DataFrame(prepro_test.transform(mat_test),columns=col_train_bis)
+
+# b = train.head()
+
+# List of features
+COLUMNS = col_train
+FEATURES = col_train_bis
+LABEL = "SalePrice"
+
+# columns for tensorflow
+feature_cols = [tf.contrib.layers.real_valued_column(k) for k in
+                 FEATURES]
+#pp.pprint(feature_cols)
+
+# Training set and Prediction set with features to predict
+training_set = train[COLUMNS] # includes output
+prediction_set = train.SalePrice # output
