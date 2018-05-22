@@ -1,0 +1,20 @@
+import tensorflow as tf
+'''
+    variables: during optimization process 
+    tensorflow tunes the parameters of the model
+               variables need to be initialized
+    placeholders: initially empty and are used 
+    to feed in the actual tranining examples
+'''
+
+sess = tf.InteractiveSession()
+
+random_uniform = tf.random_uniform((4,4),0,1)
+my_var = tf.Variable(initial_value=random_uniform)
+init = tf.global_variables_initializer() # all variables have to be initialized
+sess.run(init) # firstly initialize this
+print(sess.run(my_var))
+
+my_ph = tf.placeholder(tf.float32, shape=(None,5)) # placeholder for output
+
+print(my_ph)
