@@ -1,0 +1,28 @@
+import tensorflow as tf
+import numpy as np
+
+'''example for create one neuron that performs a very
+linear fit to some 2-D data
+'''
+
+a = np.random.seed(101)
+b = tf.set_random_seed(101)
+
+rand_a = np.random.uniform(0,100,(5,5))
+rand_b = np.random.uniform(0,100, (5,1))
+
+# create placeholder for input and output parameters
+a = tf.placeholder(tf.float32)
+b = tf.placeholder(tf.float32)
+
+# define operation
+
+add_op = a + b
+mul_op = a * b
+
+# execute Session
+with tf.Session() as sess:
+    add_result = sess.run(add_op, feed_dict={a:rand_a, b:rand_b})
+    print(add_result)
+    mul_result = sess.run(mul_op, feed_dict={a:rand_a, b: rand_b})
+    print(mul_result)
