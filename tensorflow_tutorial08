@@ -1,0 +1,74 @@
+import tensorflow as tf
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.metrics import mean_squared_error
+
+# import csv
+energy_m = pd.read_csv("D:/SCHOOL/EENG_572/final/data/data_500_train.csv") # energy model
+
+#print(energy_d.head())
+
+# define input and output
+y_val = energy_m['energy_demand']
+x_data = energy_m.drop('energy_demand', axis=1)
+
+# define train and test data
+X_train, X_test, y_train, y_test = train_test_split(
+    x_data,y_val, test_size=0.3,random_state=101)
+
+# scale the data [0,1]
+scaler = MinMaxScaler()
+scaler.fit(x_data)
+
+# put into dataframe
+X_train = pd.DataFrame(data=scaler.transform(X_train), columns=X_train.columns,
+                       index=X_train.index)
+
+X_test = pd.DataFrame(data=scaler.transform(X_test), columns=X_test.columns,
+                       index=X_test.index)
+
+width = tf.feature_column.numeric_column('vertex_x')
+length = tf.feature_column.numeric_column('vertex_y')
+height = tf.feature_column.numeric_column('vertex_z')
+wwwr_n = tf.feature_column.numeric_column('wwr_north')
+wwwr_e = tf.feature_column.numeric_column('wwr_east')
+wwwr_s = tf.feature_column.numeric_column('wwr_south')
+wwwr_w = tf.feature_column.numeric_column('wwr_west')
+u_roof = tf.feature_column.numeric_column('u_value_roof')
+u_floor = tf.feature_column.numeric_column('u_value_floor')
+u_wall = tf.feature_column.numeric_column('u_value_wall')
+
+feat_cols = [width,length,height,
+             wwwr_n,wwwr_e,wwwr_s,
+             wwwr_w,u_roof,u_floor,u_wall]
+
+input_func = tf.estimator.inputs.pandas_input_fn(x=X_train,
+                                                 y=y_train,
+                                                 batch_size=10,
+                                                 num_epochs=1000,
+                                                 shuffle=True)
+
+# NN model
+model = tf.estimator.DNNRegressor(hidden_units=[10,10,10],feature_columns=feat_cols)
+
+# train model
+model.train(input_fn=input_func, steps=2000)
+
+predict_input_func = tf.estimator.inputs.pandas_input_fn(x=X_test,
+                                                         batch_size=10,
+                                                         num_epochs=1,
+                                                         shuffle=False)
+
+pred_gen = model.predict(predict_input_func)
+predictions = list(pred_gen)
+
+final_preds = []
+
+for pred in predictions:
+    final_preds.append(pred['predictions'])
+
+error = mean_squared_error(y_test,final_preds)**0.5
+
+print(error)
+
