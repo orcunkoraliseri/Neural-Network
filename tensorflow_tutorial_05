@@ -35,6 +35,8 @@ with tf.Session() as sess:
 
     for i in range(training_steps):
         sess.run(train)
+        loss = sess.run(error)
+        print(loss) # print out error rate
 
     final_slope, final_intercept = sess.run([m,b])
 
