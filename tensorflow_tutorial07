@@ -1,0 +1,82 @@
+import tensorflow as tf
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+import pprint
+
+# Just disables the warning, doesn't enable AVX/FMA
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+
+pp = pprint.PrettyPrinter()
+
+'''regression example
+esimator API from tensorflow
+'''
+
+# generate input data
+x_data = np.linspace(0.0,10.0,1000000)
+noise = np.random.rand(len(x_data)) # add noise
+
+# form output data
+y_true = (0.5 * x_data) + 5 + 2*noise
+
+# put data into dataframe
+x_df = pd.DataFrame(data=x_data,columns=['X Data'])
+y_df = pd.DataFrame(data=y_true,columns=['Y'])
+my_data = pd.concat([x_df,y_df], axis=1) # concatenate input and output
+
+feat_cols = [tf.feature_column.numeric_column('x', shape=[1])] # feature columns
+estimator = tf.estimator.LinearRegressor(feature_columns=feat_cols)
+
+# split train and test data
+x_train, x_test, y_train, y_test = train_test_split(x_data,y_true,
+                                                    test_size=0.3,random_state=101)
+
+input_func = tf.estimator.inputs.numpy_input_fn({'x':x_train },
+                                                y_train,batch_size=8,num_epochs=None,
+                                                shuffle=True)
+
+train_input_func = tf.estimator.inputs.numpy_input_fn({'x':x_train },
+                                                y_train,batch_size=8,num_epochs=1000,
+                                                shuffle=False)
+
+test_input_func = tf.estimator.inputs.numpy_input_fn({'x':x_test },
+                                                y_test,batch_size=8,num_epochs=1000,
+                                                shuffle=False)
+
+estimator.train(input_fn=input_func,steps=1000)# train estimator
+
+train_metrics = estimator.evaluate(
+    input_fn=train_input_func,steps=1000) # train training data, no shuffle
+
+test_metrics = estimator.evaluate(
+    input_fn=test_input_func,steps=1000) # # train testing data, no shuffle
+
+
+# loss value for train and test are expected to be close
+# but if loss is too low that means it is over-fitting
+# buf if loss too high that means there is not enough learning occurred
+print('TRAINING DATA METRICS')
+print(train_metrics)
+
+print('TEST DATA METRICS')
+print(test_metrics)
+
+brand_new_data = np.linspace(0,10,10)
+
+input_fn_predict = tf.estimator.inputs.numpy_input_fn({'x': brand_new_data},
+                                                      shuffle=False) # new data predict for
+
+#pp.pprint(list(estimator.predict(input_fn=input_fn_predict)))
+
+predictions = []
+for pred in estimator.predict(input_fn=input_fn_predict):
+    predictions.append(pred['predictions'])
+
+print(predictions)
+
+my_data.sample(n=1000).plot(kind='scatter', x = 'X Data', y = 'Y')
+plt.plot(brand_new_data,predictions,'r*')
+plt.show()
