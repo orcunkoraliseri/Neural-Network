@@ -22,7 +22,7 @@ my_data = pd.concat([x_df,y_df], axis=1) # concatenate input and output
 #print(my_data.head())
 
 # take 250 random value and visualize it
-my_data.sample(n=250).plot(kind='scatter', x = 'X Data', y = 'Y')
+#my_data.sample(n=250).plot(kind='scatter', x = 'X Data', y = 'Y')
 #plt.show()
 
 # you can not feed millions data at same time for NN
@@ -34,7 +34,7 @@ b = tf.Variable(0.17) # give random value
 
 x_ph = tf.placeholder(tf.float32,[batch_size])
 y_ph = tf.placeholder(tf.float32,[batch_size])
-
+print(x_ph)
 y_model = m*x_ph + b # plot of y
 
 # LOSS function
@@ -50,5 +50,17 @@ with tf.Session() as sess:
     batches = 1000
 
     for i in range(batches):
-        rand_ind = np.random.randint(len(x_data),size=batch_size)
-        feed = {x_ph: x_data[]}
+        random_index = np.random.randint(len(x_data),size=batch_size) # random index generation
+        feed = {x_ph: x_data[random_index],y_ph: y_true[random_index]} # randomly feeding the algorithm
+
+        sess.run(train,feed_dict=feed)
+        loss = sess.run([error],feed_dict=feed)
+        print('loss:', loss) # error rate for each step
+
+        model_m, model_b = sess.run([m,b])
+
+y_hat = x_data*model_m + model_b
+
+my_data.sample(n=250).plot(kind='scatter', x = 'X Data', y = 'Y')
+plt.plot(x_data,y_hat,'r')
+plt.show()
