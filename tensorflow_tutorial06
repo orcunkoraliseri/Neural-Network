@@ -1,0 +1,54 @@
+import tensorflow as tf
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+'''regression task
+supervised learning
+realistic data set
+'''
+
+# generate input data
+x_data = np.linspace(0.0,10.0,1000000)
+noise = np.random.rand(len(x_data)) # add noise
+
+# form output data
+y_true = (0.5 * x_data) + 5 + noise
+
+# put data into dataframe
+x_df = pd.DataFrame(data=x_data,columns=['X Data'])
+y_df = pd.DataFrame(data=y_true,columns=['Y'])
+my_data = pd.concat([x_df,y_df], axis=1) # concatenate input and output
+#print(my_data.head())
+
+# take 250 random value and visualize it
+my_data.sample(n=250).plot(kind='scatter', x = 'X Data', y = 'Y')
+#plt.show()
+
+# you can not feed millions data at same time for NN
+# so form batch give data step by step
+batch_size = 8
+
+m = tf.Variable(0.81) # give random value
+b = tf.Variable(0.17) # give random value
+
+x_ph = tf.placeholder(tf.float32,[batch_size])
+y_ph = tf.placeholder(tf.float32,[batch_size])
+
+y_model = m*x_ph + b # plot of y
+
+# LOSS function
+error = tf.reduce_sum(tf.square(y_ph-y_model))
+optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.001)
+train =  optimizer.minimize(error)
+
+init = tf.global_variables_initializer()
+
+with tf.Session() as sess:
+    sess.run(init)
+
+    batches = 1000
+
+    for i in range(batches):
+        rand_ind = np.random.randint(len(x_data),size=batch_size)
+        feed = {x_ph: x_data[]}
