@@ -1,0 +1,177 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+import itertools
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from pylab import rcParams
+import matplotlib
+import tensorflow as tf
+import warnings
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.ensemble import IsolationForest
+import pprint
+# tutorial link : https://www.kaggle.com/zoupet/neural-network-model-for-house-prices-tensorflow
+
+pp = pprint.PrettyPrinter()
+
+warnings.filterwarnings('ignore')
+
+tf.logging.set_verbosity(tf.logging.INFO)
+sess = tf.InteractiveSession()
+
+# train data = all inputs and outputs
+train = pd.read_csv("D:/SCHOOL/EENG_572/final/data/data_500_train.csv")
+print('Shape of the train data with all features:', train.shape)
+train = train.select_dtypes(exclude=['object'])
+print("")
+print('Shape of the train data with numerical features:', train.shape)
+train.fillna(0,inplace=True)
+
+# test data = all inputs
+test = pd.read_csv("D:/SCHOOL/EENG_572/final/data/data_500_test.csv")
+test = test.select_dtypes(exclude=['object'])
+test.fillna(0,inplace=True)
+print("")
+print("List of features contained our dataset:",list(train.columns))
+
+# isolate outliers
+clf = IsolationForest(max_samples = 100, random_state = 42)
+clf.fit(train)
+y_noano = clf.predict(train)
+y_noano = pd.DataFrame(y_noano, columns = ['Top'])
+y_noano[y_noano['Top'] == 1].index.values
+
+train = train.iloc[y_noano[y_noano['Top'] == 1].index.values]
+train.reset_index(drop=True, inplace=True)
+print("Number of Outliers:", y_noano[y_noano['Top'] == -1].shape[0])
+print("Number of rows without outliers:", train.shape[0])
+
+#a = train.head(5)
+
+col_train = list(train.columns)
+col_train_bis = list(train.columns)
+#print(col_train)
+col_train_bis.remove('energy_demand')
+
+mat_train = np.matrix(train)
+mat_test = np.matrix(test)
+mat_new = np.matrix(train.drop('energy_demand', axis=1))
+mat_y = np.array(train.energy_demand).reshape((448,1))
+
+prepro_y = MinMaxScaler() # normalisation of test set
+prepro_y.fit(mat_y)
+
+prepro = MinMaxScaler() # normalisation of all set
+prepro.fit(mat_train)
+
+prepro_test = MinMaxScaler() # normalisation of training set
+prepro_test.fit(mat_new)
+
+train = pd.DataFrame(prepro.transform(mat_train),columns=col_train)
+test = pd.DataFrame(prepro_test.transform(mat_test),columns=col_train_bis)
+
+# b = train.head()
+
+# List of features
+COLUMNS = col_train
+FEATURES = col_train_bis
+LABEL = "energy_demand"
+
+# columns for tensorflow
+feature_cols = [tf.contrib.layers.real_valued_column(k) for k in
+                 FEATURES]
+#pp.pprint(feature_cols)
+
+# Training set and Prediction set with features to predict
+training_set = train[COLUMNS] # includes output
+#prediction_set = train.SalePrice # output
+prediction_set = train.energy_demand # output
+
+# train and test set division
+x_train, x_test, y_train, y_test = train_test_split(training_set[FEATURES],
+                                                    prediction_set, test_size=0.33,
+                                                    random_state=42)
+y_train = pd.DataFrame(y_train, columns = [LABEL])
+training_set = pd.DataFrame(x_train, columns = FEATURES).merge(y_train,
+                                                               left_index = True,
+                                                               right_index = True)
+#c = training_set.head()
+
+# training for submission
+training_sub = training_set[col_train]
+
+
+# same procedure for test set, adapt into dataframe
+y_test = pd.DataFrame(y_test,columns=[LABEL])
+testing_set = pd.DataFrame(x_test,columns=FEATURES).merge(y_test,left_index=True,right_index=True)
+
+
+# apply neural network model
+# model
+tf.logging.set_verbosity(tf.logging.ERROR)
+regressor = tf.contrib.learn.DNNRegressor (feature_columns=feature_cols,
+                                           activation_fn=tf.nn.relu, hidden_units=[200,100,50,25,12])
+
+# The optimizer used in our case is an Adagrad optimizer (by default)
+# optimizer = tf.train.GradientDescentOptimizer( learning_rate= 0.1 ))
+
+# Reset the index of training
+training_set.reset_index(drop=True,inplace=True)
+
+def input_fn(data_set,pred=False):
+
+    if pred == False:
+
+        feature_cols = {k: tf.constant(data_set[k].values) for k in FEATURES}
+        labels = tf.constant(data_set[LABEL].values)
+
+        return  feature_cols, labels
+
+    if pred == True:
+        feature_cols = {k: tf.constant(data_set[k].values) for k in FEATURES}
+
+        return feature_cols
+
+
+# Deep Neural Network Regressor with the training set which contain the data split by train test split
+regressor.fit(input_fn=lambda :input_fn(training_set),steps=2000)
+
+# Evaluation on the test set created by train_test_split
+ev = regressor.evaluate(input_fn=lambda: input_fn(testing_set), steps=1)
+
+# Display the score on the testing set
+# 0.002X in average
+loss_score1 = ev["loss"]
+print("Final Loss on the testing set: {0:f}".format(loss_score1))
+
+# Predictions
+y = regressor.predict(input_fn=lambda: input_fn(testing_set))
+predictions = list(itertools.islice(y, testing_set.shape[0]))
+
+
+#Next step: Used our model to make the predictions with the
+#data set Test. And add one graphic to see the difference
+#between the reality and the predictions.
+
+predictions = pd.DataFrame(prepro_y.inverse_transform(np.array(predictions).reshape(148,1)),
+                           columns = ['Prediction'])
+
+reality = pd.DataFrame(prepro.inverse_transform(testing_set), columns = [COLUMNS]).energy_demand
+
+matplotlib.rc('xtick', labelsize=7.5)
+matplotlib.rc('ytick', labelsize=7.5)
+
+fig, ax = plt.subplots(figsize=(12.5, 10))
+
+plt.style.use('ggplot')
+plt.plot(predictions.values, reality.values, 'ro')
+plt.xlabel('Predictions', fontsize = 5)
+plt.ylabel('Reality', fontsize = 5)
+plt.title('Predictions x Reality on dataset Test', fontsize = 5)
+ax.plot([reality.min(), reality.max()], [reality.min(), reality.max()], 'k--', lw=2)
+plt.show()
