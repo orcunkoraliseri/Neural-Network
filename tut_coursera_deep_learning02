@@ -1,4 +1,5 @@
 link1=https://hub.coursera-notebooks.org/user/kxwsckmtvyzuocblmevjym/notebooks/Week%202/Python%20Basics%20with%20Numpy/Python%20Basics%20With%20Numpy%20v3.ipynb
+link2=https://github.com/amarsic1990/Deep-learning/blob/master/Python%20Basics%20with%20numpy.py
 
 # vectorization examples of python
 import numpy as np
