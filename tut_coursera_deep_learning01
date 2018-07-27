@@ -1,0 +1,13 @@
+# Vectorization
+# to speed up your code instead of using 'for loops'
+import numpy as np
+import time
+
+a = np.random.rand(1000000)
+b = np.random.rand(1000000)
+
+tic = time.time()
+c = np.dot(a,b)  # Vectorized version input data for deep learning
+toc = time.time()
+
+print('Vectorized version:' + str(1000*(toc-tic)) + 'ms')
