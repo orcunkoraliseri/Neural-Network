@@ -106,11 +106,46 @@ def softmax(x):
      s -- A numpy matrix equal to the softmax of x, of shape (n,m)
      """
     x_exp= np.exp(x)
+    print('x_exp= ' + str(x_exp))
     x_sum = np.sum(x_exp, axis=1, keepdims=True)
+    print('x_sum= ' + str(x_sum))
     s = x_exp/x_sum
     return s
 
 print("softmax(x) = " + str(softmax(x)))
 
+
+def L1(yhat, y):
+    """
+    Arguments:
+    yhat -- vector of size m (predicted labels)
+    y -- vector of size m (true labels)
+
+    Returns:
+    loss -- the value of the L1 loss function defined above
+    """
+
+    return sum(abs(y - yhat))
+
+yhat = np.array([.9, 0.2, 0.1, .4, .9])
+y = np.array([1, 0, 0, 1, 1])
+print("L1 = " + str(L1(yhat, y)))
+
+
+def L2(yhat, y):
+    """
+    Arguments:
+    yhat -- vector of size m (predicted labels)
+    y -- vector of size m (true labels)
+
+    Returns:
+    loss -- the value of the L2 loss function defined above
+    """
+
+    return sum((y - yhat) ** 2)
+
+yhat = np.array([.9, 0.2, 0.1, .4, .9])
+y = np.array([1, 0, 0, 1, 1])
+print("L2 = " + str(L2(yhat, y)))
 
 
