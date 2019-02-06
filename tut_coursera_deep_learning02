@@ -1,48 +1,43 @@
 link1=https://hub.coursera-notebooks.org/user/kxwsckmtvyzuocblmevjym/notebooks/Week%202/Python%20Basics%20with%20Numpy/Python%20Basics%20With%20Numpy%20v3.ipynb
 link2=https://github.com/amarsic1990/Deep-learning/blob/master/Python%20Basics%20with%20numpy.py
 
-# vectorization examples of python
+import math as m
 import numpy as np
 
-a = np.random.rand(5,1)
-print(a)
-print('')
-print(a.T)
-print('')
-print(np.dot(a,a.T))
-print('')
-print(a.shape)
-
-import  math
-
 def basic_sigmoid(x):
-    return 1 / (1 + math.exp(-x))
-print(basic_sigmoid(3))
+    s = 1 / (1 + m.exp(-x))
+    print(s)
+    return s
+#x = np.array([1, 2, 3])
+#basic_sigmoid(3)
 
+# possible to print array list
+def sigmoid(x):
+    s = 1 / (1 + np.exp(-x))
+    print(s)
+    return s
+x = np.array([1,2,3])
+#sigmoid(x)
 
-# array of x
-x = np.random.random(10)
-
-def sigmoid (x):
-    return 1 / (1 + np.exp(-x))
-print(x)
-print(sigmoid(x))
-print('')
-
-# sigmoid derivative
-x = np.array([1, 2, 3])
-
+# sigmoid gradient
+# optimize loss function using backpropogation
 def sigmoid_derivative(x):
-    s = 1 / (1+ np.exp(-x))
-    ds = s * (1-s)
-    return ds
+    s = 1 / (1 + np.exp(-x))
+    # derivative sigmoid = sigmoid * (1 - sigmoid)
+    ds = s * (1 - s)
+    print(ds)
+    return s
+x = np.array([1,2,3])
+#sigmoid_derivative(x)
 
-print("sigmoid_derivative(x) = " + str(sigmoid_derivative(x)))
-print('')
-
-# image2vector
-# This is a 3 by 3 by 2 array, typically images will be
-# (num_px_x, num_px_y,3) where 3 represents the RGB values
+# reshaping arrays
+# unroll image to vector
+# X.shape is used to get the shape (dimension) of a matrix/vector X
+# X.reshape(...) is used to reshape X into some other dimension
+def image2vector(image):
+    v = image.reshape(image.shape[0] * image.shape[1] * image.shape[2],1)
+    print("image2vector(image) = " + str(v))
+    return v
 image = np.array([[[ 0.67826139,  0.29380381],
         [ 0.90714982,  0.52835647],
         [ 0.4215251 ,  0.45017551]],
@@ -54,98 +49,70 @@ image = np.array([[[ 0.67826139,  0.29380381],
        [[ 0.60659855,  0.00533165],
         [ 0.10820313,  0.49978937],
         [ 0.34144279,  0.94630077]]])
+#image2vector(image)
 
-def image2vector(x):
-    """
-    Argument:
-    image -- a numpy array of shape (length, height, depth)
-
-    Returns:
-    v -- a vector of shape (length*height*depth, 1)
-    """
-    return x.reshape (x.shape[0], x.shape[1], x.shape[2],1)
-print ("image2vector(image) = " + str(image2vector(image)))
-print('')
-
-# normalizerows
-
-x = np.array([
-    [0, 3, 4],
-    [1, 6, 4]])
-
+# normalize data
+# It often leads to a better performance because gradient descent converges
+# faster after normalization
 def normalizeRows(x):
-    """
-    Implement a function that normalizes each row of the matrix x (to have unit length).
+    x_norm = np.linalg.norm(x, ord=2, axis=1, keepdims=True)
+    x = x / x_norm
+    print(x)
+    return x
+x = np.array([[0, 3, 4], [1, 6, 4]])
+#normalizeRows(x)
 
-    Argument:
-    x -- A numpy matrix of shape (n, m)
-
-    Returns:
-    x -- The normalized (by row) numpy matrix. You are allowed to modify x.
-    """
-    x_norm = np.linalg.norm(x, axis=1, keepdims=True)
-    return x /x_norm
-
-print("normalizeRows(x) = " + str(normalizeRows(x)))
-
+# Broadcasting: it describes how numpy treats arrays with different shapes
+# during arithmetic operations
+# https://docs.scipy.org/doc/numpy/user/basics.broadcasting.html
 # softmax
-
-x = np.array([
-    [9, 2, 5, 0, 0],
-    [7, 5, 0, 0 ,0]])
-
 def softmax(x):
-    """Calculates the softmax for each row of the input x.
-
-     Your code should work for a row vector and also for matrices of shape (n, m).
-
-     Argument:
-     x -- A numpy matrix of shape (n,m)
-
-     Returns:
-     s -- A numpy matrix equal to the softmax of x, of shape (n,m)
-     """
-    x_exp= np.exp(x)
-    print('x_exp= ' + str(x_exp))
+    x_exp = np.exp(x)
     x_sum = np.sum(x_exp, axis=1, keepdims=True)
-    print('x_sum= ' + str(x_sum))
-    s = x_exp/x_sum
+    s = x_exp / x_sum
+    print(s)
     return s
+x = np.array([[9,2,5,0,0],[7,5,0,0,0]])
+#softmax(x)
 
-print("softmax(x) = " + str(softmax(x)))
+
+# VECTORIZATION
+import  time as t
+
+x1 = [9, 2, 5, 0, 0, 7, 5, 0, 0, 0, 9, 2, 5, 0, 0]
+x2 = [9, 2, 2, 9, 0, 9, 2, 5, 0, 0, 9, 2, 5, 0, 0]
+# classic dot product of vectors implementation
+tic = t.process_time()
+dot = 0
+for i in range(len(x1)):
+    dot += x1[i]*x2[i]
+toc = t.process_time()
+#print("dot= " + str(dot) + " " + "Computation time= " + str(1000*(toc - tic)) + "ms")
+
+# versus vectorized dot product of vectors implementation
+tic = t.process_time()
+dot = np.dot(x1, x2)
+toc = t.process_time()
+#print("dot= " + str(dot) + " " + "Computation time= " + str(1000*(toc - tic)) + "ms")
 
 
+# Loss function: L1
+# It is used to evaluate the performance of the prediction model
+# by minimizing absolute differences
 def L1(yhat, y):
-    """
-    Arguments:
-    yhat -- vector of size m (predicted labels)
-    y -- vector of size m (true labels)
-
-    Returns:
-    loss -- the value of the L1 loss function defined above
-    """
-
-    return sum(abs(y - yhat))
-
-yhat = np.array([.9, 0.2, 0.1, .4, .9])
-y = np.array([1, 0, 0, 1, 1])
-print("L1 = " + str(L1(yhat, y)))
+    loss1 = np.sum(abs(y - yhat))
+    return loss1
+yhat = np.array([.9, .2, .1,.4,.9])
+y = np.array([1,0,0,1,1])
+print("L1= " + str(L1(yhat, y)))
 
 
+# Loss function: L2
+# It is used to evaluate the performance of the prediction model
+# by minimizing squared differences
 def L2(yhat, y):
-    """
-    Arguments:
-    yhat -- vector of size m (predicted labels)
-    y -- vector of size m (true labels)
-
-    Returns:
-    loss -- the value of the L2 loss function defined above
-    """
-
-    return sum((y - yhat) ** 2)
-
-yhat = np.array([.9, 0.2, 0.1, .4, .9])
-y = np.array([1, 0, 0, 1, 1])
-print("L2 = " + str(L2(yhat, y)))
-
-
+    loss2 = np.sum((y - yhat)**2)
+    return loss2
+yhat = np.array([.9, .2, .1,.4,.9])
+y = np.array([1,0,0,1,1])
+print("L2= " + str(L2(yhat, y)))
